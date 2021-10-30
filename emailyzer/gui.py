@@ -4,84 +4,10 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import Tk
 from typing import List
+from emailyzer.application import Application
 
 
-# Base
-
-class AbstractDisplayObject(ABC):
-    @abstractmethod
-    def display_objects(self):
-        pass
-
-    @abstractmethod
-    def name(self):
-        pass
-
-
-class Message(AbstractDisplayObject):
-    pass
-
-
-class EmailCollection(ABC):
-    pass
-
-
-class Mailbox(AbstractDisplayObject, EmailCollection):
-    pass
-
-
-class Filter(AbstractDisplayObject):
-    pass
-
-
-class Calendar(AbstractDisplayObject):
-    pass
-
-
-# Concrete
-
-
-class DummyDisplayObject(AbstractDisplayObject):
-    def name(self):
-        return "foo"
-
-    def display_objects(self):
-        return []
-
-
-class DummyCollection(EmailCollection):
-    pass
-
-
-class NotmuchDatabase(Mailbox):
-    pass
-
-
-class NotmuchDefaultDatabase(NotmuchDatabase):
-
-    def display_objects(self):
-        return [DummyDisplayObject()]
-
-    def name(self):
-        return "NotMuchMail default database"
-
-
-def test_objects():
-    # Hardcoded defaults for testing
-
-    return [NotmuchDefaultDatabase()]
-
-
-@dataclass
-class Application:
-
-    def name(self):
-        "Emailyzer"
-
-    def display_objects(self):
-        return test_objects()
-
-
+# Views and controllers
 class ApplicationTreeView(ttk.Treeview):
     def __init__(self):
         super().__init__(columns=["name"], show='tree')
