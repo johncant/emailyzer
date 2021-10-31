@@ -5,7 +5,7 @@ hookspec = pluggy.HookspecMarker("emailyzer")
 
 
 @hookspec(firstresult=True)
-def display_object_get_frame_opts(display_object, container):
+def display_object_get_frame_opts(display_object, container, closer):
     pass
 
 

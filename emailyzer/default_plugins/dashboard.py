@@ -5,8 +5,9 @@ import pluggy
 hookimpl = pluggy.HookimplMarker("emailyzer")
 
 
-def display_object_get_frame_opts(display_object):
-    if isinstance(obj, base.EmailCollection):
+@hookimpl
+def display_object_get_frame_opts(display_object, container, closer):
+    if isinstance(display_object, base.EmailCollection):
         print("TODO - implement dashboard")
 
 
