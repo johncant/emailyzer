@@ -31,3 +31,7 @@ class Filter(AbstractDisplayObject):
 
 class Calendar(AbstractDisplayObject):
     pass
+
+
+class Plugin(AbstractDisplayObject):
+    pass

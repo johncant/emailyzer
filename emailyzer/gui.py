@@ -7,6 +7,25 @@ from typing import List
 from emailyzer.application import Application
 
 
+class Opener(ABC):
+    @abstractmethod
+    def open(self, obj):
+        pass
+
+
+def default_display_object_frame(self, container):
+    options = {
+        "text": self.name()
+    }
+    frame = ttk.Frame(container)
+    label = ttk.Label(frame, text=self.name())
+    label.grid()
+    
+
+    return frame, options
+
+
+
 # Views and controllers
 class ApplicationTreeView(ttk.Treeview):
     def __init__(self):
@@ -15,9 +34,11 @@ class ApplicationTreeView(ttk.Treeview):
 
 
 class ApplicationTreeController:
-    def __init__(self, model, view):
+    def __init__(self, model, view, opener):
         self.model = model
         self.view = view
+        self.opener = opener
+        self.mapping = {}
 
         self.populate_view(self.model)
 
@@ -30,16 +51,27 @@ class ApplicationTreeController:
 
         if model != self.model:
 
+            iid = str(id(model))
+            self.mapping[iid] = model
+
             self.view.insert(
                 tree_parent_id,
                 tk.END,
                 values=(model.name(),),
-                iid=id(model),
+                iid=iid,
                 open=False,
             )
 
         for obj in model.display_objects():
             self.populate_view(obj, model)
+
+        self.view.bind('<<TreeviewSelect>>', self.item_selected)
+
+    def item_selected(self, event):
+        for iid in self.view.selection():
+            obj = self.mapping[iid]
+
+            self.opener.open(obj)
 
 
 class ApplicationWindow(Tk):
@@ -48,7 +80,8 @@ class ApplicationWindow(Tk):
         self.tree = ApplicationTreeView()
         self.tree_controller = ApplicationTreeController(
             self.application,
-            self.tree
+            self.tree,
+            opener=self
         )
         self.tree.pack(expand=False, fill='both', side='left')
 
@@ -61,6 +94,28 @@ class ApplicationWindow(Tk):
         self.attributes("-zoomed", True)
         self.build_tree()
         self.build_notebook()
+
+    def display_object_frame_opts(self, obj):
+        pm = self.application.plugin_manager
+        frame_opts = pm.hook.display_object_get_frame_opts(
+            display_object=obj,
+            container=self.notebook,
+        )
+
+        if frame_opts is None:
+            frame_opts = default_display_object_frame(
+                obj,
+                container=self.notebook
+            )
+
+        return frame_opts
+
+    def open(self, display_obj, analyzer=None):
+        frame, opts = self.display_object_frame_opts(
+            display_obj
+        )
+
+        self.notebook.add(frame, **opts)
 
     def __init__(self, application : Application):
         super().__init__()

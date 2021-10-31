@@ -10,3 +10,4 @@ jupyter
 imapclient
 notmuch
 gensim
+pluggy

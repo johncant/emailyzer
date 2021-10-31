@@ -5,10 +5,19 @@ else:
     from importlib.metadata import entry_points
 
 
+from pluggy import PluginManager
+from emailyzer import hookspecs
+from emailyzer import default_plugins
+
+
 # Untested
 def import_plugins():
 
-    for ep in entry_points(group='emailyzer.plugins'):
-        plugin = ep.load()
-        plugin()
+    pm = PluginManager("emailyzer")
 
+    pm.add_hookspecs(hookspecs)
+    pm.load_setuptools_entrypoints("emailyzer")
+    pm.register(default_plugins.notmuch)
+    pm.register(default_plugins.dashboard)
+
+    return pm
