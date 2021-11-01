@@ -126,6 +126,7 @@ class ApplicationWindow(Tk, Opener, Closer):
     def build_notebook(self):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(expand=True, fill='both', side='right')
+        self.notebook_tabs = {}
 
     def build_window(self):
         self.title("Emailyzer")
@@ -151,14 +152,26 @@ class ApplicationWindow(Tk, Opener, Closer):
         return frame_opts
 
     def open(self, display_obj, analyzer=None):
-        frame, opts = self.display_object_frame_opts(
-            display_obj,
-        )
+        iid = id(display_obj)
 
-        self.notebook.add(frame, **opts)
+        if iid in self.notebook_tabs:
+            tab_id = self.notebook_tabs[iid]
+            self.notebook.select(tab_id)
+        else:
+            frame, opts = self.display_object_frame_opts(
+                display_obj,
+            )
+
+            self.notebook.add(frame, **opts)
+            self.notebook.select(frame)
+            self.notebook_tabs[id(display_obj)] = frame
 
     def close_child(self, child):
+        iids = [k for k, v in self.notebook_tabs.items() if v == child]
         self.notebook.forget(child)
+
+        for iid in iids:
+            del self.notebook_tabs[iid]
 
     def __init__(self, application : Application):
         super().__init__()
