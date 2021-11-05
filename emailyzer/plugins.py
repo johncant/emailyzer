@@ -11,7 +11,7 @@ from emailyzer import default_plugins
 
 
 # Untested
-def import_plugins():
+def import_plugins() -> PluginManager:
 
     pm = PluginManager("emailyzer")
 

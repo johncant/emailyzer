@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
+from typing import Sequence, Dict
+from pandas import DataFrame
 
 
 class AbstractDisplayObject(ABC):
     @abstractmethod
-    def display_objects(self):
+    def display_objects(self) -> Sequence["AbstractDisplayObject"]:
         pass
 
     @abstractmethod
-    def name(self):
+    def name(self) -> str:
         pass
 
 
@@ -15,13 +17,13 @@ class Message(ABC):
     pass
 
 
-class EmailCollection(ABC):
+class EmailCollection(AbstractDisplayObject):
     @abstractmethod
-    def meta_dataframe(self):
+    def meta_dataframe(self) -> DataFrame:
         pass
 
 
-class Mailbox(AbstractDisplayObject, EmailCollection):
+class Mailbox(EmailCollection):
     pass
 
 

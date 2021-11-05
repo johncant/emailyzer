@@ -3,24 +3,18 @@ from dataclasses import dataclass, field
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import Tk
-from typing import List
+from typing import List, Tuple, Dict, Any
 from emailyzer.application import Application
-
-
-class Opener(ABC):
-    @abstractmethod
-    def open(self, obj):
-        pass
-
-
-class Closer(ABC):
-    @abstractmethod
-    def close_child(self, child):
-        pass
+from emailyzer.gui_base import Opener, Closer
+from emailyzer.base import AbstractDisplayObject
 
 
 class DefaultDisplayObjectFrame(ttk.Frame):
-    def __init__(self, display_object, container, closer):
+    def __init__(
+                self,
+                display_object: AbstractDisplayObject,
+                container: ttk.Widget, closer: Closer
+            ) -> None:
         super().__init__(container)
 
         self.display_object = display_object
@@ -29,8 +23,8 @@ class DefaultDisplayObjectFrame(ttk.Frame):
 
         self.build_ui()
 
-    def build_ui(self):
-        inner_frame= ttk.Frame(self)
+    def build_ui(self) -> None:
+        inner_frame = ttk.Frame(self)
 
         inner_frame.grid(column=0, row=0)
         self.columnconfigure(0, weight=1)
@@ -46,12 +40,17 @@ class DefaultDisplayObjectFrame(ttk.Frame):
         close = ttk.Button(inner_frame, text="Close", command=self.close)
         close.pack(expand=False, anchor='s', pady=10)
 
-    def close(self):
+    def close(self) -> None:
         self.closer.close_child(self)
         self.destroy()
 
 
-def default_display_object_frame(display_object, container, closer):
+def default_display_object_frame(
+            display_object: AbstractDisplayObject,
+            container: ttk.Widget,
+            closer: Closer
+        ) -> Tuple[ttk.Widget, Dict]:
+
     options = {
         "text": display_object.name()
     }
@@ -63,29 +62,36 @@ def default_display_object_frame(display_object, container, closer):
     return frame, options
 
 
-
 # Views and controllers
 class ApplicationTreeView(ttk.Treeview):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(columns=["name"], show='tree')
         self.heading("name", text="Objects")
 
 
 class ApplicationTreeController:
-    def __init__(self, model, view, opener):
+    def __init__(
+                self,
+                model: AbstractDisplayObject,
+                view: ttk.Treeview,
+                opener: Opener) -> None:
         self.model = model
         self.view = view
         self.opener = opener
-        self.mapping = {}
+        self.mapping: Dict[str, AbstractDisplayObject] = {}
 
         self.populate_view(self.model)
 
-    def populate_view(self, model, parent=None):
+    def populate_view(
+                self,
+                model: AbstractDisplayObject,
+                parent: AbstractDisplayObject=None
+            ) -> None:
 
-        if parent == self.model:
-            tree_parent_id = ""
-        else:
-            tree_parent_id = id(parent)
+        tree_parent_id: str = ""
+
+        if parent != self.model:
+            tree_parent_id = str(id(parent))
 
         if model != self.model:
 
@@ -105,7 +111,7 @@ class ApplicationTreeController:
 
         self.view.bind('<<TreeviewSelect>>', self.item_selected)
 
-    def item_selected(self, event):
+    def item_selected(self, event: tk.Event) -> None:
         for iid in self.view.selection():
             obj = self.mapping[iid]
 
@@ -114,7 +120,7 @@ class ApplicationTreeController:
 
 class ApplicationWindow(Tk, Opener, Closer):
 
-    def build_tree(self):
+    def build_tree(self) -> None:
         self.tree = ApplicationTreeView()
         self.tree_controller = ApplicationTreeController(
             self.application,
@@ -123,18 +129,20 @@ class ApplicationWindow(Tk, Opener, Closer):
         )
         self.tree.pack(expand=False, fill='both', side='left')
 
-    def build_notebook(self):
+    def build_notebook(self) -> None:
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(expand=True, fill='both', side='right')
-        self.notebook_tabs = {}
 
-    def build_window(self):
+    def build_window(self) -> None:
         self.title("Emailyzer")
         self.attributes("-zoomed", True)
         self.build_tree()
         self.build_notebook()
 
-    def display_object_frame_opts(self, obj):
+    def display_object_frame_opts(
+                self,
+                obj: AbstractDisplayObject
+            )  -> Tuple[ttk.Widget, Dict]:
         pm = self.application.plugin_manager
         frame_opts = pm.hook.display_object_get_frame_opts(
             display_object=obj,
@@ -151,7 +159,12 @@ class ApplicationWindow(Tk, Opener, Closer):
 
         return frame_opts
 
-    def open(self, display_obj, analyzer=None):
+    def open(
+                self,
+                display_obj: AbstractDisplayObject,
+                analyzer: Any=None
+             ) -> None:
+
         iid = id(display_obj)
 
         if iid in self.notebook_tabs:
@@ -166,23 +179,24 @@ class ApplicationWindow(Tk, Opener, Closer):
             self.notebook.select(frame)
             self.notebook_tabs[id(display_obj)] = frame
 
-    def close_child(self, child):
+    def close_child(self, child: ttk.Widget) -> None:
         iids = [k for k, v in self.notebook_tabs.items() if v == child]
         self.notebook.forget(child)
 
         for iid in iids:
             del self.notebook_tabs[iid]
 
-    def __init__(self, application : Application):
+    def __init__(self, application : Application) -> None:
         super().__init__()
         self.application = application
         self.build_window()
+        self.notebook_tabs: Dict[int, ttk.Widget] = {}
 
-    def run(self):
+    def run(self) -> None:
         pass
 
 
-def main():
+def main() -> None:
     application = Application()
     ApplicationWindow(application).mainloop()
 

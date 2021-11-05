@@ -11,3 +11,4 @@ imapclient
 notmuch
 gensim
 pluggy
+dataenforce
