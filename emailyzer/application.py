@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Sequence
-from emailyzer.base import Plugin, AbstractDisplayObject, EmailCollection
+from emailyzer.base import AbstractDisplayObject, EmailCollection
 from emailyzer.plugins import import_plugins, PluginManager
 
 

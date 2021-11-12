@@ -12,3 +12,5 @@ notmuch
 gensim
 pluggy
 dataenforce
+more_itertools
+gttk

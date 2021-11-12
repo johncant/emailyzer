@@ -1,12 +1,10 @@
-from abc import ABC, ABCMeta, abstractmethod, abstractproperty
-from dataclasses import dataclass, field
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter import Tk
-from typing import List, Tuple, Dict, Any
+from typing import Dict, Tuple, cast
+
 from emailyzer.application import Application
-from emailyzer.gui_base import Opener, Closer
 from emailyzer.base import AbstractDisplayObject
+from emailyzer.gui_base import Closer, Opener
 
 
 class DefaultDisplayObjectFrame(ttk.Frame):
@@ -64,8 +62,8 @@ def default_display_object_frame(
 
 # Views and controllers
 class ApplicationTreeView(ttk.Treeview):
-    def __init__(self) -> None:
-        super().__init__(columns=["name"], show='tree')
+    def __init__(self, master: ttk.Widget) -> None:
+        super().__init__(master, columns=["name"], show='tree')
         self.heading("name", text="Objects")
 
 
@@ -110,34 +108,64 @@ class ApplicationTreeController:
             self.populate_view(obj, model)
 
         self.view.bind('<<TreeviewSelect>>', self.item_selected)
+        self.view.bind("<Button-3>", self.context_menu)
 
-    def item_selected(self, event: tk.Event) -> None:
+    def context_menu(self, event: tk.Event) -> None:
+        item = self.view.identify('item', event.x, event.y)
+        obj = self.mapping[item]
+
+        menu = tk.Menu(self.view, tearoff=0)
+
+        # Poor abstraction leads to hacks
+        app = cast(Application, self.model)
+
+        app.plugin_manager.hook.populate_context_menu(
+            menu=menu,
+            display_object=obj,
+            opener=self.opener
+        )
+
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+        
+
+    def item_selected(self, _event: tk.Event) -> None:
         for iid in self.view.selection():
             obj = self.mapping[iid]
 
             self.opener.open(obj)
 
 
-class ApplicationWindow(Tk, Opener, Closer):
+class ApplicationWindow(tk.Tk, Opener, Closer):
 
-    def build_tree(self) -> None:
-        self.tree = ApplicationTreeView()
-        self.tree_controller = ApplicationTreeController(
+    def build_tree(self, master) -> ttk.Widget:
+        tree = ApplicationTreeView(master)
+        ApplicationTreeController(
             self.application,
-            self.tree,
+            tree,
             opener=self
         )
-        self.tree.pack(expand=False, fill='both', side='left')
+        tree.pack(expand=False, fill='both', side='left')
+        return tree
 
-    def build_notebook(self) -> None:
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(expand=True, fill='both', side='right')
+    def build_notebook(self, master) -> None:
+        notebook = ttk.Notebook(master)
+        notebook.pack(expand=True, fill='both', side='right')
+        return notebook
 
     def build_window(self) -> None:
         self.title("Emailyzer")
         self.attributes("-zoomed", True)
-        self.build_tree()
-        self.build_notebook()
+        panedwindow = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
+        panedwindow.pack(expand=True, fill=tk.BOTH)
+        tree = self.build_tree(panedwindow)
+        notebook = self.build_notebook(panedwindow)
+        panedwindow.add(tree)
+        panedwindow.add(notebook)
+
+        self.notebook = notebook
 
     def display_object_frame_opts(
                 self,
@@ -161,23 +189,20 @@ class ApplicationWindow(Tk, Opener, Closer):
 
     def open(
                 self,
-                display_obj: AbstractDisplayObject,
-                analyzer: Any=None
+                obj: AbstractDisplayObject,
              ) -> None:
 
-        iid = id(display_obj)
+        iid = id(obj)
 
         if iid in self.notebook_tabs:
             tab_id = self.notebook_tabs[iid]
             self.notebook.select(tab_id)
         else:
-            frame, opts = self.display_object_frame_opts(
-                display_obj,
-            )
+            frame, opts = self.display_object_frame_opts(obj)
 
             self.notebook.add(frame, **opts)
             self.notebook.select(frame)
-            self.notebook_tabs[id(display_obj)] = frame
+            self.notebook_tabs[id(obj)] = frame
 
     def close_child(self, child: ttk.Widget) -> None:
         iids = [k for k, v in self.notebook_tabs.items() if v == child]
@@ -203,4 +228,3 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-

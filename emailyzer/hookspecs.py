@@ -1,9 +1,11 @@
 from emailyzer.base import AbstractDisplayObject, Plugin, EmailCollection
-from emailyzer.gui_base import Closer
+from emailyzer.gui_base import Closer, Opener
 import pluggy
+import tkinter as tk
 from tkinter import ttk
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple, Dict, Sequence
 
+#pylint: disable=unused-argument
 
 hookspec = pluggy.HookspecMarker("emailyzer")
 
@@ -23,6 +25,10 @@ def plugin_display_object() -> Plugin:
 
 
 @hookspec
-def email_collections() -> List[EmailCollection]:
+def email_collections() -> Sequence[EmailCollection]:
     pass
 
+
+@hookspec
+def populate_context_menu(menu: tk.Menu, display_object: AbstractDisplayObject, opener: Opener) -> None:
+    pass
